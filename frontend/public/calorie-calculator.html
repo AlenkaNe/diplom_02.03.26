@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор калорий</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="healthy-nutrition.html">Про здоровое питание</a></li>
+                <li><a href="weight-loss.html">ПП для похудения</a></li>
+                <li><a href="calorie-calculator.html" class="active">Калькулятор калорий</a></li>
+                <li><a href="product-search.html">Поиск продуктов</a></li>
+                <li><a href="diary.html">Дневник питания</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <h1>Калькулятор калорий</h1>
+            
+            <form class="calculator-form" id="calculator-form">
+                <div class="form-group">
+                    <label for="gender">Пол:</label>
+                    <select id="gender" required>
+                        <option value="">Выберите пол</option>
+                        <option value="male">Мужчина</option>
+                        <option value="female">Женщина</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Возраст (лет):</label>
+                    <input type="number" id="age" min="18" max="120" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="height">Рост (см):</label>
+                    <input type="number" id="height" min="100" max="250" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="weight">Вес (кг):</label>
+                    <input type="number" id="weight" min="30" max="300" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity">Уровень активности:</label>
+                    <select id="activity" required>
+                        <option value="">Выберите уровень</option>
+                        <option value="1.2">Минимальная (сидячий образ жизни)</option>
+                        <option value="1.375">Низкая (легкая активность 1-3 раза в неделю)</option>
+                        <option value="1.55">Средняя (умеренная активность 3-5 раз в неделю)</option>
+                        <option value="1.725">Высокая (высокая активность 6-7 раз в неделю)</option>
+                        <option value="1.9">Очень высокая (ежедневные интенсивные тренировки)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="goal">Цель:</label>
+                    <select id="goal" required>
+                        <option value="">Выберите цель</option>
+                        <option value="loss">Похудение</option>
+                        <option value="maintain">Поддержание веса</option>
+                        <option value="gain">Набор массы</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="formula">Формула расчета:</label>
+                    <select id="formula" required>
+                        <option value="">Выберите формулу</option>
+                        <option value="harris">Харриса-Бенедикта</option>
+                        <option value="mifflin">Миффлина-Сан Жеора</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="calculate-btn">Рассчитать</button>
+            </form>
+
+            <div class="bmi-section">
+                <h2>Ваш результат</h2>
+                <p class="bmi-value">Индекс массы тела: <span id="body-mass-index-value">0</span></p>
+                <div class="bmi-scale">
+                    <div class="bmi-scale-bar">
+                        <div class="bmi-pointer" id="bmi-pointer"></div>
+                    </div>
+                    <div class="bmi-scale-labels">
+                        <span>&lt;18.5</span>
+                        <span>18.5–24.9</span>
+                        <span>25.0–29.9</span>
+                        <span>30+</span>
+                    </div>
+                </div>
+                <p class="bmi-meaning" id="bmi-meaning">Недостаточный вес.</p>
+                <p class="bmi-note">ИМТ используется для предварительной оценки риска для здоровья – так называемого скрининга. Этот показатель не универсален, он не учитывает индивидуальные особенности, такие как плотность костей, развитость мышечной ткани, содержание жидкости в организме, возраст и пол человека.</p>
+            </div>
+            <div class="results-section" id="results-section">
+                <div class="tdee-result">
+                    Суточная норма калорий: <span id="tdee-value">0</span> ккал
+                </div>
+
+                <div class="macros-container">
+                    <div class="macros-chart">
+                        <div class="chart-container">
+                            <canvas id="macros-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="macros-list">
+                        <div class="macro-item protein">
+                            <div class="macro-color protein"></div>
+                            <div class="macro-info">
+                                <div class="macro-name">Белки</div>
+                                <div class="macro-value" id="protein-value">0 ккал</div>
+                            </div>
+                        </div>
+                        <div class="macro-item fat">
+                            <div class="macro-color fat"></div>
+                            <div class="macro-info">
+                                <div class="macro-name">Жиры</div>
+                                <div class="macro-value" id="fat-value">0 ккал</div>
+                            </div>
+                        </div>
+                        <div class="macro-item carbs">
+                            <div class="macro-color carbs"></div>
+                            <div class="macro-info">
+                                <div class="macro-name">Углеводы</div>
+                                <div class="macro-value" id="carbs-value">0 ккал</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Твой план ПП.</p>
+    </footer>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
+

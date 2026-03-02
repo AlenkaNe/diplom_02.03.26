@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск продуктов</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="healthy-nutrition.html">Про здоровое питание</a></li>
+                <li><a href="weight-loss.html">ПП для похудения</a></li>
+                <li><a href="calorie-calculator.html">Калькулятор калорий</a></li>
+                <li><a href="product-search.html" class="active">Поиск продуктов</a></li>
+                <li><a href="diary.html">Дневник питания</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+        <h1>Поиск продуктов</h1>
+        
+        <div class="search-form">
+            <input type="text" id="search-input" placeholder="Введите название продукта...">
+            <button id="search-button">Найти</button>
+        </div>
+        
+        <div class="loader" id="loader"></div>
+        
+        <div class="results">
+            <h2>Результаты поиска</h2>
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Бренд</th>
+                        <th>Состав</th>
+                        <th>Размер порции</th>
+                        <th>Подробнее</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Результаты будут здесь -->
+                </tbody>
+            </table>
+            <div id="no-results" class="no-results">Нет результатов</div>
+        </div>
+    </div>
+
+    <div id="nutrient-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3 id="nutrient-title">Информация о нутриентах</h3>
+                    <h4 class="nutrient-subtitle">Расчет на 100г продукта</h4>
+                </div>
+                <button id="close-modal" class="close-button" aria-label="Закрыть">×</button>
+            </div>
+            <div id="nutrient-body" class="modal-body">
+                <p class="no-nutrients">Данные о нутриентах отсутствуют</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления продукта в дневник -->
+    <div id="add-to-diary-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Добавить продукт в дневник питания</h3>
+                </div>
+                <button id="close-diary-modal" class="close-button" aria-label="Закрыть">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-to-diary-form">
+                    <div class="form-group">
+                        <label for="meal-type-select">Тип приема пищи:</label>
+                        <select id="meal-type-select" required>
+                            <option value="">Выберите тип приема пищи</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount-gram">Вес (граммы):</label>
+                        <input type="number" id="amount-gram" min="1" step="0.1" required placeholder="Введите вес в граммах">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="submit-btn">Добавить в дневник</button>
+                    </div>
+                </form>
+                <div id="diary-message" class="message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    </main>
+
+    <footer>
+        <p>Твой план ПП.</p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник питания</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .diary-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .date-selector {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .date-selector label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .date-selector input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .diary-entries {
+            display: grid;
+            gap: 20px;
+        }
+
+        .meal-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .meal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .meal-entries {
+            display: grid;
+            gap: 15px;
+        }
+
+        .entry-card {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .entry-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .entry-amount {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .entry-nutrients {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nutrient-item {
+            text-align: center;
+        }
+
+        .nutrient-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .nutrient-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+
+        .kcal { color: #e74c3c; }
+        .protein { color: #3498db; }
+        .fat { color: #f39c12; }
+        .carbs { color: #27ae60; }
+
+        .no-entries {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #3498db;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .summary {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="healthy-nutrition.html">Про здоровое питание</a></li>
+                <li><a href="weight-loss.html">ПП для похудения</a></li>
+                <li><a href="calorie-calculator.html">Калькулятор калорий</a></li>
+                <li><a href="product-search.html">Поиск продуктов</a></li>
+                <li><a href="diary.html" class="active">Дневник питания</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container diary-container">
+            <h1>Дневник питания</h1>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+
+            <div class="date-selector">
+                <label for="date-input">Дата:</label>
+                <input type="date" id="date-input" value="">
+            </div>
+
+            <div id="summary" class="summary" style="display: none;">
+                <div class="summary-title">Итого за день:</div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="nutrient-label">Калории</div>
+                        <div class="nutrient-value kcal" id="total-kcal">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="nutrient-label">Белки</div>
+                        <div class="nutrient-value protein" id="total-protein">0 г</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="nutrient-label">Жиры</div>
+                        <div class="nutrient-value fat" id="total-fat">0 г</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="nutrient-label">Углеводы</div>
+                        <div class="nutrient-value carbs" id="total-carbs">0 г</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">Загрузка данных...</div>
+            <div id="diary-content" style="display: none;">
+                <div id="diary-entries" class="diary-entries"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Твой план ПП.</p>
+    </footer>
+
+    <script src="diary.js"></script>
+</body>
+</html>
+
