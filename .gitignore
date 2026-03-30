@@ -1,0 +1,85 @@
+# ============================
+# ГЛОБАЛЬНЫЙ .GITIGNORE
+# ============================
+
+# === Node.js зависимости  ===
+node_modules/
+**/node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# === Скомпилированный код  ===
+dist/
+**/dist/
+build/
+**/build/
+*.min.js
+
+# === Логи ===
+logs/
+*.log
+
+# === Операционные системы ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Тесты и покрытие ===
+coverage/
+**/coverage/
+.nyc_output
+test-results/
+**/test-results/
+*.test.js
+*.spec.ts
+
+# === IDE и редакторы ===
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+# IntelliJ / WebStorm
+.idea/
+*.iml
+# Другие
+*.sublime-workspace
+*.sublime-project
+
+# === Переменные окружения (СЕКРЕТЫ!) ===
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env.local
+
+# === Временные файлы ===
+.temp/
+.tmp/
+*.tmp
+*.pid
+*.seed
+*.pid.lock
+*.swp
+*.swo
+
+# === Отчёты и диагностика ===
+report.*.json
+
+# === Документы и медиа (если не нужны в репо) ===
+*.docx
+*.doc
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# === Локальные скрипты БД (кроме инициализации) ===
+*.sql
+!docker/init-db.sql

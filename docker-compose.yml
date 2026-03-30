@@ -1,0 +1,63 @@
+# Развертывание: из корня репозитория
+#
+# 1. Создайте файл .env рядом с этим файлом:
+#    FOOD_DATA_API_KEY=<ключ USDA FoodData Central>
+#    JWT_SECRET=<длинная случайная строка>
+#
+# 2. Запуск:
+#    docker compose up --build
+#
+# 3. Откройте http://localhost:3001
+#
+# PostgreSQL инициализируется скриптом docker/init-db.sql при первом создании volume.
+# Порт БД наружу не проброшен — только внутри сети compose.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: food_project
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d food_project"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: 3000
+      FOOD_DATA_API_KEY: ${FOOD_DATA_API_KEY:?Set FOOD_DATA_API_KEY in .env}
+    expose:
+      - "3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: food_project
+      PGPORT: 5432
+      BACKEND_URL: http://backend:3000
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+volumes:
+  pgdata:

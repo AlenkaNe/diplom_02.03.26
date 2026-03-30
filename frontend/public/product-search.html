@@ -5,14 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Поиск продуктов</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .diary-products-block {
+            margin-bottom: 30px;
+        }
+        .diary-products-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .diary-products-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .diary-product-card {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .diary-product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .diary-product-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .diary-product-nutrients {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .diary-product-nutrient-item {
+            text-align: center;
+        }
+        .diary-product-nutrient-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        .diary-product-nutrient-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+        .diary-product-nutrient-value.kcal { color: #e74c3c; }
+        .diary-product-nutrient-value.protein { color: #3498db; }
+        .diary-product-nutrient-value.fat { color: #f39c12; }
+        .diary-product-nutrient-value.carbs { color: #27ae60; }
+        .diary-product-per-100 {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .diary-product-add-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .diary-product-add-btn:hover {
+            background: #2980b9;
+        }
+        .diary-products-empty {
+            padding: 20px;
+            text-align: center;
+            color: #7f8c8d;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .user-recipes-block {
+            margin-bottom: 30px;
+        }
+        .user-recipes-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .user-recipes-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .user-recipes-btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .user-recipes-btn:hover {
+            background: #2980b9;
+        }
+        .recipes-list-grid {
+            display: grid;
+            gap: 15px;
+        }
+    </style>
 </head>
 <body>
     <header>
         <nav>
             <ul>
                 <li><a href="healthy-nutrition.html">Про здоровое питание</a></li>
-                <li><a href="weight-loss.html">ПП для похудения</a></li>
-                <li><a href="calorie-calculator.html">Калькулятор калорий</a></li>
+                <li><a href="recipes.html">Рецепты</a></li>
+                <li><a href="calorie-calculator.html">Калькулятор КБЖУ</a></li>
                 <li><a href="product-search.html" class="active">Поиск продуктов</a></li>
                 <li><a href="diary.html">Дневник питания</a></li>
                 <li><a href="profile.html">Профиль</a></li>
@@ -51,6 +165,19 @@
             </table>
             <div id="no-results" class="no-results">Нет результатов</div>
         </div>
+
+        <div id="user-recipes-block" class="user-recipes-block">
+            <h2 class="user-recipes-title">Ваши блюда и продукты</h2>
+            <div class="user-recipes-buttons">
+                <button type="button" class="user-recipes-btn" id="create-recipe-btn">Создать свое блюдо</button>
+                <button type="button" class="user-recipes-btn" id="view-recipes-btn">Просмотреть ваши блюда</button>
+            </div>
+        </div>
+
+        <div id="diary-products-block" class="diary-products-block" style="display: none;">
+            <h2 class="diary-products-title">Продукты, которые вы уже искали</h2>
+            <div id="diary-products-container" class="diary-products-grid"></div>
+        </div>
     </div>
 
     <div id="nutrient-modal" class="modal">
@@ -68,12 +195,70 @@
         </div>
     </div>
 
+    <!-- Модальное окно создания блюда -->
+    <div id="create-recipe-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Создать своё блюдо</h3>
+                    <p class="modal-subtitle" style="margin-top: 5px; font-size: 12px; color: #7f8c8d;">Все значения указаны на 100 г продукта</p>
+                </div>
+                <button id="close-create-recipe-modal" class="close-button" aria-label="Закрыть">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-recipe-form">
+                    <div class="form-group">
+                        <label for="recipe-name">Название блюда:</label>
+                        <input type="text" id="recipe-name" required placeholder="Например: Овсянка с бананом">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipe-kcal">Калорийность (ккал на 100 г):</label>
+                        <input type="number" id="recipe-kcal" min="0" step="0.1" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipe-protein">Белки (г на 100 г):</label>
+                        <input type="number" id="recipe-protein" min="0" step="0.1" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipe-fat">Жиры (г на 100 г):</label>
+                        <input type="number" id="recipe-fat" min="0" step="0.1" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipe-carbs">Углеводы (г на 100 г):</label>
+                        <input type="number" id="recipe-carbs" min="0" step="0.1" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="submit-btn">Создать блюдо</button>
+                    </div>
+                </form>
+                <div id="create-recipe-message" class="message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра блюд -->
+    <div id="view-recipes-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Ваши блюда</h3>
+                </div>
+                <button id="close-view-recipes-modal" class="close-button" aria-label="Закрыть">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="view-recipes-list" class="recipes-list-grid"></div>
+                <div id="view-recipes-empty" class="diary-products-empty" style="display: none;">У вас пока нет созданных блюд</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно для добавления продукта в дневник -->
     <div id="add-to-diary-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">
                     <h3>Добавить продукт в дневник питания</h3>
+                    <p id="add-to-diary-product-name" class="modal-product-name" style="margin-top: 5px; font-size: 14px; color: #666; display: none;"></p>
                 </div>
                 <button id="close-diary-modal" class="close-button" aria-label="Закрыть">×</button>
             </div>
@@ -87,7 +272,7 @@
                     </div>
                     <div class="form-group">
                         <label for="amount-gram">Вес (граммы):</label>
-                        <input type="number" id="amount-gram" min="1" step="0.1" required placeholder="Введите вес в граммах">
+                        <input type="number" id="amount-gram" min="1" step="1" required placeholder="Введите вес в граммах">
                     </div>
                     <div class="form-group">
                         <button type="submit" class="submit-btn">Добавить в дневник</button>

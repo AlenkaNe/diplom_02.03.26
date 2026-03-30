@@ -87,6 +87,39 @@
             font-size: 14px;
         }
 
+        .entry-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .entry-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+
+        .entry-btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .entry-btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .entry-btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .entry-btn-delete:hover {
+            background: #c0392b;
+        }
+
         .entry-nutrients {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -166,6 +199,165 @@
             padding: 15px;
             border-radius: 4px;
         }
+
+        .daily-norm-block {
+            background: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .daily-norm-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .daily-norm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .daily-norm-item {
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .daily-norm-block.daily-norm-recommendation {
+            background: #fff9e6;
+            border-color: #f39c12;
+        }
+
+        .daily-norm-recommendation-text {
+            color: #7f6b00;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .diary-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diary-modal.show {
+            display: flex;
+        }
+
+        .diary-modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            min-width: 320px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .diary-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+
+        .diary-modal-form {
+            margin-bottom: 16px;
+        }
+
+        .diary-modal-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .diary-modal-form input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .diary-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .diary-modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .diary-modal-btn-save {
+            background: #3498db;
+            color: white;
+        }
+
+        .diary-modal-btn-save:hover {
+            background: #2980b9;
+        }
+
+        .diary-modal-btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .diary-modal-btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .diary-modal-message {
+            margin-top: 12px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .diary-modal-message.success { color: #27ae60; }
+        .diary-modal-message.error { color: #e74c3c; }
+
+        .edit-weight-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .edit-weight-controls input {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .diary-modal-btn-adj {
+            padding: 10px 16px;
+            border: 1px solid #3498db;
+            background: #ecf0f1;
+            color: #2c3e50;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .diary-modal-btn-adj:hover {
+            background: #dfe6e9;
+        }
     </style>
 </head>
 <body>
@@ -173,8 +365,8 @@
         <nav>
             <ul>
                 <li><a href="healthy-nutrition.html">Про здоровое питание</a></li>
-                <li><a href="weight-loss.html">ПП для похудения</a></li>
-                <li><a href="calorie-calculator.html">Калькулятор калорий</a></li>
+                <li><a href="recipes.html">Рецепты</a></li>
+                <li><a href="calorie-calculator.html">Калькулятор КБЖУ</a></li>
                 <li><a href="product-search.html">Поиск продуктов</a></li>
                 <li><a href="diary.html" class="active">Дневник питания</a></li>
                 <li><a href="profile.html">Профиль</a></li>
@@ -192,7 +384,7 @@
                 <label for="date-input">Дата:</label>
                 <input type="date" id="date-input" value="">
             </div>
-
+            <div id="user-daily-norm-block" class="daily-norm-block"></div>
             <div id="summary" class="summary" style="display: none;">
                 <div class="summary-title">Итого за день:</div>
                 <div class="summary-grid">
@@ -221,6 +413,26 @@
             </div>
         </div>
     </main>
+
+    <!-- Модальное окно редактирования веса -->
+    <div id="edit-weight-modal" class="diary-modal">
+        <div class="diary-modal-content">
+            <div class="diary-modal-title" id="edit-weight-modal-title">Редактировать вес</div>
+            <form id="edit-weight-form" class="diary-modal-form">
+                <label for="edit-weight-input">Вес (граммы):</label>
+                <div class="edit-weight-controls">
+                    <button type="button" class="diary-modal-btn-adj" id="edit-weight-minus">−10 г</button>
+                    <input type="number" id="edit-weight-input" min="1" step="1" required placeholder="Введите вес в граммах">
+                    <button type="button" class="diary-modal-btn-adj" id="edit-weight-plus">+10 г</button>
+                </div>
+                <div id="edit-weight-message" class="diary-modal-message"></div>
+                <div class="diary-modal-buttons">
+                    <button type="submit" class="diary-modal-btn diary-modal-btn-save">Сохранить</button>
+                    <button type="button" class="diary-modal-btn diary-modal-btn-cancel" id="edit-weight-cancel">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <footer>
         <p>Твой план ПП.</p>

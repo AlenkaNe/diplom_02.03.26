@@ -17,9 +17,10 @@ const JWT_EXPIRES = '30d';
 app.use(express.json());
 app.use(cookieParser());
 
-// Настраиваем прокси на бэкенд
+// Настраиваем прокси на бэкенд (в Docker: BACKEND_URL=http://backend:3000)
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
 const apiProxy = createProxyMiddleware('/foods', {
-  target: 'http://localhost:3000',
+  target: backendUrl,
   changeOrigin: true,
   pathRewrite: {
     '^/foods': '/foods'
@@ -483,6 +484,21 @@ app.put('/api/me/calculator', authMiddleware, async (req, res) => {
   }
 });
 
+// Получить рецепты (публичная таблица recipes)
+app.get('/api/recipes', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, image_url, ingredients, instructions, kcal_per_100, protein_g, fat_g, carbs_g, time_minutes, servings, category
+       FROM recipes
+       ORDER BY category, name`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Ошибка получения рецептов:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // Роуты для дневника питания
 // Получить типы приемов пищи
 app.get('/api/meal-types', async (req, res) => {
@@ -510,17 +526,144 @@ app.post('/api/diary/add', authMiddleware, async (req, res) => {
     
     const date = eaten_at || new Date().toISOString().split('T')[0];
     
+    const amountGramRounded = Math.round(parseFloat(amount_gram));
     const result = await pool.query(
       `INSERT INTO diary_entries (user_id, meal_type_id, amount_gram, custom_name, custom_kcal, custom_protein, custom_fat, custom_carbs, eaten_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id`,
-      [req.userId, meal_type_id, amount_gram, custom_name, custom_kcal || null, custom_protein || null, custom_fat || null, custom_carbs || null, date]
+      [req.userId, meal_type_id, amountGramRounded, custom_name, custom_kcal || null, custom_protein || null, custom_fat || null, custom_carbs || null, date]
     );
     
     res.status(201).json({ message: 'Продукт добавлен в дневник', id: result.rows[0].id });
   } catch (err) {
     console.error('Ошибка добавления продукта в дневник:', err);
     res.status(500).json({ error: 'Ошибка сервера', message: err.message });
+  }
+});
+
+// Обновить вес записи в дневнике
+app.put('/api/diary/:id', authMiddleware, async (req, res) => {
+  try {
+    const entryId = parseInt(req.params.id, 10);
+    const { amount_gram } = req.body;
+
+    if (!amount_gram || amount_gram <= 0) {
+      return res.status(400).json({ error: 'Вес должен быть больше 0' });
+    }
+
+    const amountGramRounded = Math.round(parseFloat(amount_gram));
+    const result = await pool.query(
+      `UPDATE diary_entries
+       SET amount_gram = $1
+       WHERE id = $2 AND user_id = $3
+       RETURNING id, amount_gram`,
+      [amountGramRounded, entryId, req.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Запись не найдена' });
+    }
+
+    res.json({ message: 'Вес обновлён', id: result.rows[0].id, amount_gram: result.rows[0].amount_gram });
+  } catch (err) {
+    console.error('Ошибка обновления записи дневника:', err);
+    res.status(500).json({ error: 'Ошибка сервера', message: err.message });
+  }
+});
+
+// Удалить запись из дневника
+app.delete('/api/diary/:id', authMiddleware, async (req, res) => {
+  try {
+    const entryId = parseInt(req.params.id, 10);
+
+    const result = await pool.query(
+      `DELETE FROM diary_entries
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [entryId, req.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Запись не найдена' });
+    }
+
+    res.json({ message: 'Запись удалена', id: entryId });
+  } catch (err) {
+    console.error('Ошибка удаления записи дневника:', err);
+    res.status(500).json({ error: 'Ошибка сервера', message: err.message });
+  }
+});
+
+// Создать своё блюдо (user_recipes)
+app.post('/api/user-recipes', authMiddleware, async (req, res) => {
+  try {
+    const { name, kcal_per_100, protein_g, fat_g, carbs_g } = req.body;
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Название блюда обязательно' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO user_recipes (user_id, name, kcal_per_100, protein_g, fat_g, carbs_g)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, kcal_per_100, protein_g, fat_g, carbs_g, created_at`,
+      [
+        req.userId,
+        name.trim(),
+        kcal_per_100 != null ? parseFloat(kcal_per_100) : null,
+        protein_g != null ? parseFloat(protein_g) : null,
+        fat_g != null ? parseFloat(fat_g) : null,
+        carbs_g != null ? parseFloat(carbs_g) : null
+      ]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Ошибка создания блюда:', err);
+    res.status(500).json({ error: 'Ошибка сервера', message: err.message });
+  }
+});
+
+// Получить список блюд пользователя
+app.get('/api/user-recipes', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, kcal_per_100, protein_g, fat_g, carbs_g, created_at
+       FROM user_recipes
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Ошибка получения блюд:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Получить уникальные продукты из дневника пользователя (для блока "Продукты, которые вы уже искали")
+// Максимум 15 продуктов, новые вытесняют самые давние (по added_at)
+app.get('/api/diary-products', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT custom_name, custom_kcal, custom_protein, custom_fat, custom_carbs
+       FROM (
+         SELECT DISTINCT ON (custom_name, custom_kcal, custom_protein, custom_fat, custom_carbs)
+           custom_name, custom_kcal, custom_protein, custom_fat, custom_carbs, added_at
+         FROM diary_entries
+         WHERE user_id = $1 AND custom_name IS NOT NULL AND custom_name != ''
+         ORDER BY custom_name, custom_kcal NULLS LAST, custom_protein NULLS LAST, custom_fat NULLS LAST, custom_carbs NULLS LAST, added_at DESC NULLS LAST
+       ) sub
+       ORDER BY added_at DESC NULLS LAST
+       LIMIT 15`,
+      [req.userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Ошибка получения продуктов из дневника:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
@@ -576,8 +719,12 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product-search.html'));
 });
 
-// Запускаем сервер
-app.listen(PORT, () => {
-  console.log(`Сервер запущен на порту ${PORT}`);
-  console.log(`Перейдите по адресу http://localhost:${PORT}`);
-});
+module.exports = { app };
+
+// Запускаем сервер только при прямом запуске файла
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Сервер запущен на порту ${PORT}`);
+    console.log(`Перейдите по адресу http://localhost:${PORT}`);
+  });
+}

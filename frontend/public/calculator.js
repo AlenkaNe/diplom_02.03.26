@@ -78,6 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const fatKcal = Math.round(tdee * fatPercent);
         const carbsKcal = Math.round(tdee * carbsPercent);
 
+        // Переводим ккал в граммы: белок и углеводы — 4 ккал/г, жиры — 9 ккал/г
+        const proteinGrams = Math.round(proteinKcal / 4);
+        const fatGrams = Math.round(fatKcal / 9);
+        const carbsGrams = Math.round(carbsKcal / 4);
+
         const heightM = height / 100; // перевод см в метры
         const bmiRaw = heightM > 0 ? weight / (heightM * heightM) : 0;
         const roundedBmi = Number(bmiRaw.toFixed(2));
@@ -98,10 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
         drawMacrosChart(proteinPercent, fatPercent, carbsPercent);
 
         // Сохраняем данные в базу данных
-        saveCalculatorData(goal, activity, roundedTdee, weight);
+        saveCalculatorData(goal, activity, roundedTdee, weight, proteinGrams, fatGrams, carbsGrams);
     });
 
-    async function saveCalculatorData(goal, activityLevel, dailyKcalNorm, weightValue) {
+    async function saveCalculatorData(goal, activityLevel, dailyKcalNorm, weightValue, dailyProtein, dailyFat, dailyCarbs) {
         try {
             const response = await fetch('/api/me/calculator', {
                 method: 'PUT',
@@ -113,6 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     goal: goal,
                     activity_level: activityLevel.toString(),
                     daily_kcal_norm: dailyKcalNorm,
+                    daily_protein: dailyProtein,
+                    daily_fat: dailyFat,
+                    daily_carbs: dailyCarbs,
                     body_mass_index: Number(bodyMassIndexValue.textContent.replace(',', '.')),
                     weight: weightValue
                 })

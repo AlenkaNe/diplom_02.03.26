@@ -29,6 +29,157 @@ document.addEventListener('DOMContentLoaded', function() {
             performSearch();
         }
     });
+
+    // Загружаем продукты из дневника при загрузке страницы
+    loadDiaryProducts();
+
+    // Блок "Ваши блюда и продукты"
+    const createRecipeBtn = document.getElementById('create-recipe-btn');
+    const viewRecipesBtn = document.getElementById('view-recipes-btn');
+    const createRecipeModal = document.getElementById('create-recipe-modal');
+    const viewRecipesModal = document.getElementById('view-recipes-modal');
+    const closeCreateRecipeModal = document.getElementById('close-create-recipe-modal');
+    const closeViewRecipesModal = document.getElementById('close-view-recipes-modal');
+    const createRecipeForm = document.getElementById('create-recipe-form');
+
+    createRecipeBtn.addEventListener('click', () => {
+        createRecipeForm.reset();
+        document.getElementById('create-recipe-message').style.display = 'none';
+        createRecipeModal.classList.add('show');
+    });
+    closeCreateRecipeModal.addEventListener('click', () => createRecipeModal.classList.remove('show'));
+    createRecipeModal.addEventListener('click', (e) => {
+        if (e.target === createRecipeModal) createRecipeModal.classList.remove('show');
+    });
+
+    viewRecipesBtn.addEventListener('click', async () => {
+        await loadAndShowRecipes();
+        viewRecipesModal.classList.add('show');
+    });
+    closeViewRecipesModal.addEventListener('click', () => viewRecipesModal.classList.remove('show'));
+    viewRecipesModal.addEventListener('click', (e) => {
+        if (e.target === viewRecipesModal) viewRecipesModal.classList.remove('show');
+    });
+
+    createRecipeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msgEl = document.getElementById('create-recipe-message');
+        const name = document.getElementById('recipe-name').value.trim();
+        const kcal = document.getElementById('recipe-kcal').value;
+        const protein = document.getElementById('recipe-protein').value;
+        const fat = document.getElementById('recipe-fat').value;
+        const carbs = document.getElementById('recipe-carbs').value;
+
+        try {
+            const response = await fetch('/api/user-recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    name,
+                    kcal_per_100: kcal ? parseFloat(kcal) : null,
+                    protein_g: protein ? parseFloat(protein) : null,
+                    fat_g: fat ? parseFloat(fat) : null,
+                    carbs_g: carbs ? parseFloat(carbs) : null
+                })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                msgEl.textContent = 'Блюдо успешно создано!';
+                msgEl.className = 'message success';
+                msgEl.style.display = 'block';
+                setTimeout(() => {
+                    createRecipeModal.classList.remove('show');
+                }, 1200);
+            } else {
+                msgEl.textContent = data.error || 'Ошибка создания блюда';
+                msgEl.className = 'message error';
+                msgEl.style.display = 'block';
+            }
+        } catch (err) {
+            console.error(err);
+            msgEl.textContent = 'Ошибка соединения: ' + err.message;
+            msgEl.className = 'message error';
+            msgEl.style.display = 'block';
+        }
+    });
+
+    async function loadAndShowRecipes() {
+        const listEl = document.getElementById('view-recipes-list');
+        const emptyEl = document.getElementById('view-recipes-empty');
+
+        try {
+            const response = await fetch('/api/user-recipes', { credentials: 'include' });
+            if (response.status === 401) {
+                listEl.innerHTML = '<p class="diary-products-empty">Войдите в систему, чтобы просматривать блюда</p>';
+                emptyEl.style.display = 'none';
+                return;
+            }
+            if (!response.ok) throw new Error('Ошибка загрузки');
+
+            const recipes = await response.json();
+            if (recipes.length === 0) {
+                listEl.innerHTML = '';
+                emptyEl.style.display = 'block';
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+            listEl.innerHTML = recipes.map(recipe => {
+                const kcal = recipe.kcal_per_100 != null ? recipe.kcal_per_100 : '—';
+                const protein = recipe.protein_g != null ? recipe.protein_g : '—';
+                const fat = recipe.fat_g != null ? recipe.fat_g : '—';
+                const carbs = recipe.carbs_g != null ? recipe.carbs_g : '—';
+                return `
+                    <div class="diary-product-card">
+                        <div class="diary-product-header">
+                            <div class="diary-product-name">${escapeHtml(recipe.name || 'Без названия')}</div>
+                        </div>
+                        <div class="diary-product-per-100">на 100 г продукта</div>
+                        <div class="diary-product-nutrients">
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Калории</div>
+                                <div class="diary-product-nutrient-value kcal">${kcal}${recipe.kcal_per_100 != null ? ' ккал' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Белки</div>
+                                <div class="diary-product-nutrient-value protein">${protein}${recipe.protein_g != null ? ' г' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Жиры</div>
+                                <div class="diary-product-nutrient-value fat">${fat}${recipe.fat_g != null ? ' г' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Углеводы</div>
+                                <div class="diary-product-nutrient-value carbs">${carbs}${recipe.carbs_g != null ? ' г' : ''}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="diary-product-add-btn add-recipe-to-diary-btn">Добавить в дневник питания</button>
+                    </div>
+                `;
+            }).join('');
+
+            listEl.querySelectorAll('.add-recipe-to-diary-btn').forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    const recipe = recipes[index];
+                    const recipeForDiary = {
+                        custom_name: recipe.name,
+                        custom_kcal: recipe.kcal_per_100,
+                        custom_protein: recipe.protein_g,
+                        custom_fat: recipe.fat_g,
+                        custom_carbs: recipe.carbs_g
+                    };
+                    viewRecipesModal.classList.remove('show');
+                    showAddToDiaryModal(recipeForDiary);
+                });
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки блюд:', err);
+            listEl.innerHTML = '<p class="diary-products-empty">Ошибка загрузки блюд</p>';
+            emptyEl.style.display = 'none';
+        }
+    }
     
     // Функция поиска
     function performSearch() {
@@ -151,6 +302,82 @@ document.addEventListener('DOMContentLoaded', function() {
         nutrientModal.classList.remove('show');
     }
 
+    async function loadDiaryProducts() {
+        const blockEl = document.getElementById('diary-products-block');
+        const containerEl = document.getElementById('diary-products-container');
+        if (!blockEl || !containerEl) return;
+
+        try {
+            const response = await fetch('/api/diary-products', { credentials: 'include' });
+            if (response.status === 401 || response.status === 404) {
+                blockEl.style.display = 'none';
+                return;
+            }
+            if (!response.ok) throw new Error('Ошибка загрузки');
+
+            const products = await response.json();
+            if (products.length === 0) {
+                blockEl.style.display = 'block';
+                containerEl.innerHTML = '<div class="diary-products-empty">Вы еще не добавляли продукты в дневник питания</div>';
+                return;
+            }
+
+            blockEl.style.display = 'block';
+            window._diaryProductsCache = products;
+            containerEl.innerHTML = products.map((product, index) => {
+                const kcal = product.custom_kcal != null ? product.custom_kcal : '—';
+                const protein = product.custom_protein != null ? product.custom_protein : '—';
+                const fat = product.custom_fat != null ? product.custom_fat : '—';
+                const carbs = product.custom_carbs != null ? product.custom_carbs : '—';
+                return `
+                    <div class="diary-product-card">
+                        <div class="diary-product-header">
+                            <div class="diary-product-name">${escapeHtml(product.custom_name || 'Неизвестный продукт')}</div>
+                        </div>
+                        <div class="diary-product-per-100">на 100 г продукта</div>
+                        <div class="diary-product-nutrients">
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Калории</div>
+                                <div class="diary-product-nutrient-value kcal">${kcal}${product.custom_kcal != null ? ' ккал' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Белки</div>
+                                <div class="diary-product-nutrient-value protein">${protein}${product.custom_protein != null ? ' г' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Жиры</div>
+                                <div class="diary-product-nutrient-value fat">${fat}${product.custom_fat != null ? ' г' : ''}</div>
+                            </div>
+                            <div class="diary-product-nutrient-item">
+                                <div class="diary-product-nutrient-label">Углеводы</div>
+                                <div class="diary-product-nutrient-value carbs">${carbs}${product.custom_carbs != null ? ' г' : ''}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="diary-product-add-btn" data-diary-index="${index}">Добавить в дневник питания</button>
+                    </div>
+                `;
+            }).join('');
+
+            containerEl.querySelectorAll('.diary-product-add-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.getAttribute('data-diary-index'), 10);
+                    const product = window._diaryProductsCache && window._diaryProductsCache[index];
+                    if (product) showAddToDiaryModal(product);
+                });
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки продуктов из дневника:', error);
+            blockEl.style.display = 'none';
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // Функции для добавления продукта в дневник
     const addToDiaryModal = document.getElementById('add-to-diary-modal');
     const closeDiaryModalBtn = document.getElementById('close-diary-modal');
@@ -193,9 +420,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function showAddToDiaryModal(food) {
-        currentFood = food;
+    async function showAddToDiaryModal(foodOrDiaryProduct) {
+        currentFood = foodOrDiaryProduct;
         await loadMealTypes();
+        const nameEl = document.getElementById('add-to-diary-product-name');
+        if (nameEl) {
+            const name = foodOrDiaryProduct.custom_name || foodOrDiaryProduct.description || `Продукт ${foodOrDiaryProduct.id || ''}`;
+            nameEl.textContent = name ? `«${name}»` : '';
+            nameEl.style.display = name ? 'block' : 'none';
+        }
         addToDiaryModal.classList.add('show');
     }
 
@@ -203,6 +436,8 @@ document.addEventListener('DOMContentLoaded', function() {
         addToDiaryModal.classList.remove('show');
         addToDiaryForm.reset();
         diaryMessage.style.display = 'none';
+        const nameEl = document.getElementById('add-to-diary-product-name');
+        if (nameEl) nameEl.style.display = 'none';
         currentFood = null;
     }
 
@@ -221,17 +456,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Получаем данные о нутриентах из продукта
-        const nutrients = Array.isArray(currentFood.foodNutrients) ? currentFood.foodNutrients : [];
-        const kcalNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('energy') || n.name.toLowerCase().includes('калори')));
-        const proteinNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('protein') || n.name.toLowerCase().includes('белк')));
-        const fatNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('fat') || n.name.toLowerCase().includes('жир')));
-        const carbsNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('carbohydrate') || n.name.toLowerCase().includes('углевод')));
+        let customName, customKcal, customProtein, customFat, customCarbs;
 
-        const customKcal = kcalNutrient ? kcalNutrient.amount : null;
-        const customProtein = proteinNutrient ? proteinNutrient.amount : null;
-        const customFat = fatNutrient ? fatNutrient.amount : null;
-        const customCarbs = carbsNutrient ? carbsNutrient.amount : null;
+        if (currentFood.custom_name !== undefined) {
+            // Продукт из дневника (блок "Продукты, которые вы уже искали")
+            customName = currentFood.custom_name;
+            customKcal = currentFood.custom_kcal ?? null;
+            customProtein = currentFood.custom_protein ?? null;
+            customFat = currentFood.custom_fat ?? null;
+            customCarbs = currentFood.custom_carbs ?? null;
+        } else {
+            // Продукт из поиска (foods API)
+            const nutrients = Array.isArray(currentFood.foodNutrients) ? currentFood.foodNutrients : [];
+            const kcalNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('energy') || n.name.toLowerCase().includes('калори')));
+            const proteinNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('protein') || n.name.toLowerCase().includes('белк')));
+            const fatNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('fat') || n.name.toLowerCase().includes('жир')));
+            const carbsNutrient = nutrients.find(n => n.name && (n.name.toLowerCase().includes('carbohydrate') || n.name.toLowerCase().includes('углевод')));
+            customName = currentFood.description || `Продукт ${currentFood.id}`;
+            customKcal = kcalNutrient ? kcalNutrient.amount : null;
+            customProtein = proteinNutrient ? proteinNutrient.amount : null;
+            customFat = fatNutrient ? fatNutrient.amount : null;
+            customCarbs = carbsNutrient ? carbsNutrient.amount : null;
+        }
 
         try {
             const response = await fetch('/api/diary/add', {
@@ -242,8 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'include',
                 body: JSON.stringify({
                     meal_type_id: parseInt(mealTypeId),
-                    amount_gram: parseFloat(amountGram),
-                    custom_name: currentFood.description || `Продукт ${currentFood.id}`,
+                    amount_gram: Math.round(parseFloat(amountGram)),
+                    custom_name: customName,
                     custom_kcal: customKcal,
                     custom_protein: customProtein,
                     custom_fat: customFat,
@@ -255,6 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 showDiaryMessage('Продукт успешно добавлен в дневник!', 'success');
+                loadDiaryProducts();
                 setTimeout(() => {
                     hideAddToDiaryModal();
                 }, 1500);
